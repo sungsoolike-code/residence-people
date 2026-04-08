@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>분양의 편 - 수분양자 권리 플랫폼</title>
+<title>레지던스 피플 - Residence People</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
@@ -116,8 +116,8 @@ window.App = function App() {
       <nav style={S.nav}>
         <div style={S.navInner}>
           <div style={S.logoWrap} onClick={()=>setPage("home")} role="button">
-            <div style={S.logoMark}>B</div>
-            <div><div style={S.logoName}>분양의 편</div><div style={S.logoTag}>수분양자 권리 플랫폼</div></div>
+            <div style={S.logoMark}>RP</div>
+            <div><div style={S.logoName}>레지던스 피플</div><div style={S.logoTag}>Residence People</div></div>
           </div>
           <div style={S.navLinks}>
             {[["home","홈"],["projects","프로젝트"],["rights","권리행사"],["community","커뮤니티"]].map(([id,l])=>(
@@ -143,12 +143,12 @@ window.App = function App() {
         <div style={S.footerInner}>
           <div>
             <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
-              <div style={{...S.logoMark,width:24,height:24,fontSize:12}}>B</div>
-              <span style={{fontWeight:700,fontSize:14,color:"#94a3b8"}}>분양의 편</span>
+              <div style={{...S.logoMark,width:24,height:24,fontSize:12}}>RP</div>
+              <span style={{fontWeight:700,fontSize:14,color:"#94a3b8"}}>레지던스 피플</span>
             </div>
             <div style={{fontSize:12,color:"#64748b",lineHeight:1.7}}>수분양자·거주자 자치 커뮤니티 플랫폼<br/>특정 시행사·시공사의 공식 사이트가 아닙니다.</div>
           </div>
-          <div style={{fontSize:11,color:"#475569"}}>© 2025 분양의 편. All rights reserved.</div>
+          <div style={{fontSize:11,color:"#475569"}}>© 2025 레지던스 피플. All rights reserved.</div>
         </div>
       </footer>
     </div>
@@ -663,7 +663,6 @@ const S = {
   footer:{background:"#0f172a",padding:"32px 24px"},
   footerInner:{maxWidth:1240,margin:"0 auto",display:"flex",justifyContent:"space-between",alignItems:"flex-end"},
 };
-
 ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(window.App));
 </script>
 </body>
