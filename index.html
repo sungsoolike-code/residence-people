@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>분양의 편 - 수분양자 권리 플랫폼</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+<style>body{margin:0;padding:0}</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useRef, useEffect } = React;
+
+// ─── DATA ───
+const PROJECTS_DATA = [
+  { id:1, name:"현대 테라타워 영통 패스트웍스", cat:"지식산업센터", loc:"수원시 영통구 원천동 347", dev:"(주)디오개발 / 신한자산신탁", builder:"현대엔지니어링", agent:"(주)문민정품 D&C", members:47, issues:5, resolved:1, hot:true, color:"#2563eb",
+    issuesList:[
+      {id:1,title:"분양 광고 대비 실제 전용면적 차이",status:"진행중",votes:38,comments:24,date:"2025.05.12",tag:"과대광고"},
+      {id:2,title:"입주 업종 제한 사전 미고지 건",status:"진행중",votes:31,comments:19,date:"2025.05.08",tag:"입주제한"},
+      {id:3,title:"관리비 산정 기준 불투명",status:"진행중",votes:27,comments:15,date:"2025.04.29",tag:"관리비"},
+      {id:4,title:"주차장 면적 축소 의혹",status:"조사중",votes:22,comments:11,date:"2025.04.15",tag:"시설"},
+      {id:5,title:"커뮤니티 시설 약속 불이행",status:"해결",votes:19,comments:8,date:"2025.03.20",tag:"시설"},
+    ],
+    posts:[
+      {id:1,author:"영통입주자A",title:"입주 후 실제 전용면적 측정해보신 분?",comments:12,date:"4시간 전",hot:true},
+      {id:2,author:"테라47호",title:"관리비 고지서 분석 공유합니다",comments:8,date:"6시간 전",hot:true},
+      {id:3,author:"수원시민",title:"같은 층 분양받으신 분 계신가요?",comments:5,date:"1일 전",hot:false},
+      {id:4,author:"법률검토중",title:"입주제한 관련 판례 정리",comments:15,date:"2일 전",hot:true},
+    ],
+    participation:68.2, target:100,
+  },
+  { id:2, name:"힐스테이트 판교역 오피스텔", cat:"오피스텔", loc:"성남시 분당구 삼평동", dev:"현대건설", builder:"현대건설", agent:"-", members:123, issues:3, resolved:0, hot:true, color:"#7c3aed",
+    issuesList:[
+      {id:1,title:"전매제한 기간 사전 고지 누락",status:"진행중",votes:89,comments:45,date:"2025.06.01",tag:"계약"},
+      {id:2,title:"발코니 확장 불가 미고지",status:"진행중",votes:67,comments:32,date:"2025.05.20",tag:"시설"},
+      {id:3,title:"주변 소음 대책 요구",status:"조사중",votes:45,comments:18,date:"2025.05.10",tag:"환경"},
+    ],
+    posts:[
+      {id:1,author:"판교주민",title:"전매제한 관련 법률 자문 결과 공유",comments:23,date:"2시간 전",hot:true},
+    ],
+    participation:42.5, target:200,
+  },
+  { id:3, name:"래미안 수원 아이파크", cat:"아파트", loc:"수원시 팔달구 인계동", dev:"삼성물산", builder:"삼성물산·HDC현대산업개발", agent:"-", members:256, issues:7, resolved:3, hot:true, color:"#059669",
+    issuesList:[
+      {id:1,title:"조경 면적 축소 시공",status:"진행중",votes:180,comments:92,date:"2025.06.10",tag:"시설"},
+    ],
+    posts:[],
+    participation:55.0, target:500,
+  },
+  { id:4, name:"동탄 메타폴리스 A블록", cat:"지식산업센터", loc:"화성시 동탄면", dev:"(주)메타개발", builder:"포스코건설", agent:"-", members:34, issues:2, resolved:0, hot:false, color:"#dc2626",
+    issuesList:[], posts:[], participation:20.0, target:80,
+  },
+  { id:5, name:"위례 센트럴타워 생활숙박", cat:"생활숙박", loc:"성남시 수정구 창곡동", dev:"(주)위례디앤씨", builder:"롯데건설", agent:"-", members:89, issues:4, resolved:1, hot:true, color:"#ea580c",
+    issuesList:[], posts:[], participation:38.7, target:150,
+  },
+  { id:6, name:"마곡 르웨스트 상가", cat:"상가", loc:"서울시 강서구 마곡동", dev:"(주)마곡프라퍼티", builder:"대우건설", agent:"-", members:61, issues:3, resolved:0, hot:false, color:"#0891b2",
+    issuesList:[], posts:[], participation:30.0, target:120,
+  },
+];
+
+const LAWS = [
+  { title: "산업집적활성화 및 공장설립에 관한 법률", short: "산업집적법", desc: "지식산업센터 분양·입주 전반의 근거 법률. 분양 시 허위·과장 광고 금지 규정(제28조의4 ④항) 포함.", relevant: "지식산업센터" },
+  { title: "주택법", short: "주택법", desc: "아파트·오피스텔 등 공동주택 분양 절차, 분양가 규제, 하자보수 등 규정.", relevant: "아파트·오피스텔" },
+  { title: "표시·광고의 공정화에 관한 법률", short: "표시광고법", desc: "부당한 표시·광고 행위 금지. 분양 광고의 과대·기만 여부 판단 기준.", relevant: "전체" },
+  { title: "집합건물의 소유 및 관리에 관한 법률", short: "집합건물법", desc: "구분소유자의 권리·의무, 관리단 구성, 공용부분 관리 등 핵심 법률.", relevant: "전체" },
+  { title: "소비자기본법", short: "소비자기본법", desc: "소비자 권리 보호, 집단분쟁조정, 단체소송 근거 규정.", relevant: "전체" },
+  { title: "민법 (계약 관련)", short: "민법", desc: "계약 해제·해지, 손해배상, 착오·사기에 의한 의사표시 취소 등.", relevant: "전체" },
+];
+
+const RIGHTS_STEPS = [
+  { step: "01", title: "쟁점 등록", desc: "프로젝트 페이지에서 이슈를 등록하고, 수분양자들의 동의(투표)를 받습니다.", threshold: "이슈 등록 시" },
+  { step: "02", title: "결집률 달성", desc: "해당 이슈에 일정 비율 이상의 수분양자가 동의하면 공동 행동 자격이 생깁니다.", threshold: "참여자 30% 이상 동의" },
+  { step: "03", title: "법률 검토", desc: "플랫폼 연계 법률 전문가가 해당 쟁점의 법적 근거와 승소 가능성을 검토합니다.", threshold: "결집률 달성 후" },
+  { step: "04", title: "공동 행동 개시", desc: "공동 의견서 발송, 민원 접수, 조정 신청 또는 집단소송 등 구체적 행동에 돌입합니다.", threshold: "법률 검토 완료 후" },
+];
+
+const CATEGORIES = ["전체","지식산업센터","아파트","오피스텔","상가","생활숙박"];
+
+// ─── APP ───
+window.App = function App() {
+  const [page, setPage] = useState("home");
+  const [selectedProject, setSelectedProject] = useState(null);
+  const [detailTab, setDetailTab] = useState("종합");
+  const [searchQ, setSearchQ] = useState("");
+  const [activeCat, setActiveCat] = useState("전체");
+  const [email, setEmail] = useState("");
+  const [joined, setJoined] = useState(false);
+  const [rightsProject, setRightsProject] = useState(null);
+  const scrollRef = useRef(null);
+
+  const goProject = (p) => { setSelectedProject(p); setDetailTab("종합"); setPage("project-detail"); };
+  const goRights = (p) => { setRightsProject(p); setPage("rights"); };
+
+  const filtered = PROJECTS_DATA.filter(p =>
+    (activeCat === "전체" || p.cat === activeCat) &&
+    (searchQ === "" || p.name.includes(searchQ) || p.loc.includes(searchQ))
+  );
+
+  return (
+    <div style={S.root}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=DM+Sans:wght@400;500;700&display=swap');
+        *{box-sizing:border-box;margin:0;padding:0}
+        @keyframes fadeUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+        @keyframes ping{0%{transform:scale(1);opacity:1}75%,100%{transform:scale(1.8);opacity:0}}
+        .hov:hover{transform:translateY(-3px);box-shadow:0 16px 40px rgba(0,0,0,.08)!important}
+        .link:hover{color:#2563eb!important}
+        .scroll-hide::-webkit-scrollbar{display:none}
+        .prog-bar{transition:width .8s ease-out}
+      `}</style>
+
+      {/* ─── NAV ─── */}
+      <nav style={S.nav}>
+        <div style={S.navInner}>
+          <div style={S.logoWrap} onClick={()=>setPage("home")} role="button">
+            <div style={S.logoMark}>B</div>
+            <div><div style={S.logoName}>분양의 편</div><div style={S.logoTag}>수분양자 권리 플랫폼</div></div>
+          </div>
+          <div style={S.navLinks}>
+            {[["home","홈"],["projects","프로젝트"],["rights","권리행사"],["community","커뮤니티"]].map(([id,l])=>(
+              <button key={id} onClick={()=>setPage(id)} style={{...S.navBtn,...(page===id||page==="project-detail"&&id==="projects"?{color:"#2563eb",background:"#eff6ff",fontWeight:700}:{})}}>{l}</button>
+            ))}
+          </div>
+          <div style={S.navRight}>
+            <button style={S.primBtn} onClick={()=>setPage("projects")}>+ 프로젝트 등록</button>
+            <button style={S.secBtnSm}>로그인</button>
+          </div>
+        </div>
+      </nav>
+
+      {/* ─── PAGES ─── */}
+      {page === "home" && <HomePage setPage={setPage} goProject={goProject} email={email} setEmail={setEmail} joined={joined} setJoined={setJoined} />}
+      {page === "projects" && <ProjectsPage searchQ={searchQ} setSearchQ={setSearchQ} activeCat={activeCat} setActiveCat={setActiveCat} filtered={filtered} goProject={goProject} scrollRef={scrollRef} />}
+      {page === "project-detail" && selectedProject && <ProjectDetailPage p={selectedProject} tab={detailTab} setTab={setDetailTab} goRights={goRights} setPage={setPage} />}
+      {page === "rights" && <RightsPage project={rightsProject} setPage={setPage} goProject={goProject} />}
+      {page === "community" && <CommunityPage setPage={setPage} goProject={goProject} />}
+
+      {/* ─── FOOTER ─── */}
+      <footer style={S.footer}>
+        <div style={S.footerInner}>
+          <div>
+            <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
+              <div style={{...S.logoMark,width:24,height:24,fontSize:12}}>B</div>
+              <span style={{fontWeight:700,fontSize:14,color:"#94a3b8"}}>분양의 편</span>
+            </div>
+            <div style={{fontSize:12,color:"#64748b",lineHeight:1.7}}>수분양자·거주자 자치 커뮤니티 플랫폼<br/>특정 시행사·시공사의 공식 사이트가 아닙니다.</div>
+          </div>
+          <div style={{fontSize:11,color:"#475569"}}>© 2025 분양의 편. All rights reserved.</div>
+        </div>
+      </footer>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════
+// HOME PAGE
+// ═══════════════════════════════════════
+function HomePage({ setPage, goProject, email, setEmail, joined, setJoined }) {
+  return (
+    <>
+      {/* HERO */}
+      <section style={S.hero}>
+        <div style={S.heroBg}/>
+        <div style={{...S.heroInner,display:"grid",gridTemplateColumns:"1fr 380px",gap:60,alignItems:"center"}}>
+          <div style={{animation:"fadeUp .7s ease-out"}}>
+            <div style={S.heroPill}>🏠 아파트 · 오피스텔 · 지식산업센터 · 상가 · 생활숙박</div>
+            <h1 style={S.heroH1}>분양받은 당신의<br/><span style={S.heroGrad}>권리를 지키는 곳</span></h1>
+            <p style={S.heroP}>과대광고, 입주제한, 관리비 분쟁… 혼자서는 막막했던 문제,<br/>같은 건물 수분양자들과 함께 해결하세요.</p>
+            <div style={{display:"flex",gap:12,flexWrap:"wrap"}}>
+              <button style={S.heroPrimBtn} onClick={()=>setPage("projects")}>프로젝트 둘러보기</button>
+              <button style={S.heroSecBtn} onClick={()=>setPage("projects")}>프로젝트 등록하기 →</button>
+            </div>
+          </div>
+          <div style={{animation:"fadeUp .9s ease-out .2s both"}}>
+            <div style={S.previewCard}>
+              <div style={S.prevBadge}>🔥 지금 진행중인 프로젝트</div>
+              <div style={{fontSize:20,fontWeight:800,color:"#f1f5f9",marginBottom:4}}>현대 테라타워 영통 패스트웍스</div>
+              <div style={{fontSize:13,color:"#64748b",marginBottom:20}}>지식산업센터 · 수원시 영통구</div>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:12,marginBottom:20}}>
+                <div style={{textAlign:"center"}}><div style={{fontSize:18,fontWeight:800,color:"#e2e8f0"}}>47명</div><div style={{fontSize:11,color:"#64748b"}}>참여중</div></div>
+                <div style={{textAlign:"center"}}><div style={{fontSize:18,fontWeight:800,color:"#e2e8f0"}}>5건</div><div style={{fontSize:11,color:"#64748b"}}>진행 안건</div></div>
+                <div style={{textAlign:"center"}}><div style={{fontSize:18,fontWeight:800,color:"#e2e8f0"}}>현대E&C</div><div style={{fontSize:11,color:"#64748b"}}>시공사</div></div>
+              </div>
+              <button style={{width:"100%",background:"#2563eb",color:"#fff",border:"none",padding:"12px 0",borderRadius:10,fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}} onClick={()=>goProject(PROJECTS_DATA[0])}>참여하기</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* STATS */}
+      <div style={S.statsBar}>
+        {[["1","건","등록 프로젝트"],["47","명","참여 수분양자"],["5","건","진행 중 안건"],["0","건","해결 완료"]].map(([v,s,l],i)=>(
+          <div key={i} style={{textAlign:"center"}}><span style={{fontSize:32,fontWeight:900,color:"#2563eb"}}>{v}</span><span style={{fontSize:14,color:"#64748b",marginLeft:2}}>{s}</span><div style={{fontSize:13,color:"#94a3b8",marginTop:2}}>{l}</div></div>
+        ))}
+      </div>
+
+      {/* HOW */}
+      <section style={S.sec}>
+        <div style={S.secInner}>
+          <SectionHead tag="이용 방법" title="4단계로 시작하세요" />
+          <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:20}}>
+            {[["01","프로젝트 등록","분양받은 건물 정보를 등록하고 프로젝트 페이지를 개설합니다."],["02","수분양자 모집","같은 건물의 수분양자들을 초대하고, 본인 인증을 완료합니다."],["03","쟁점 정리","과대광고, 계약 불이행 등 공동 쟁점을 함께 정리합니다."],["04","공동 행동","전자투표로 의결 후 공동 민원, 협상, 법률 대응을 진행합니다."]].map(([n,t,d],i)=>(
+              <div key={i} style={{background:"#f8fafc",borderRadius:16,padding:28,border:"1px solid #e2e8f0",position:"relative",animation:`fadeUp .5s ease-out ${i*.12}s both`}}>
+                <div style={{fontSize:36,fontWeight:700,color:"#dbeafe",fontFamily:"'DM Sans',sans-serif",marginBottom:12}}>{n}</div>
+                <h3 style={{fontSize:17,fontWeight:800,color:"#0f172a",marginBottom:8}}>{t}</h3>
+                <p style={{fontSize:14,color:"#64748b",lineHeight:1.7}}>{d}</p>
+                {i<3&&<div style={{position:"absolute",right:-14,top:"50%",transform:"translateY(-50%)",fontSize:20,color:"#cbd5e1",fontWeight:700}}>→</div>}
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* FEATURES */}
+      <section style={{...S.sec,background:"#f8fafc"}}>
+        <div style={S.secInner}>
+          <SectionHead tag="주요 기능" title="프로젝트별로 제공되는 기능" />
+          <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:20}}>
+            {[["🔍","분양 계약 검증","분양 광고와 실제 계약 내용을 비교·분석합니다."],["👥","수분양자 규합","같은 프로젝트의 수분양자를 찾아 연결합니다."],["⚖️","공동 권리행사","집단 민원, 공동 의견서, 법률 대응까지."],["🤝","시행사 협업","건설적 협상 채널. 시설 개선, 관리비 협의 등."],["📁","자료 아카이브","분양 광고, 계약서, 판례 등 체계 보관."],["📊","투표 · 의결","온라인 전자투표로 주요 안건을 민주적 결정."]].map(([icon,t,d],i)=>(
+              <div key={i} className="hov" style={{background:"#fff",border:"1px solid #e2e8f0",borderRadius:16,padding:28,transition:".25s",cursor:"default"}}>
+                <div style={{fontSize:32,marginBottom:12}}>{icon}</div>
+                <h3 style={{fontSize:16,fontWeight:800,color:"#0f172a",marginBottom:6}}>{t}</h3>
+                <p style={{fontSize:14,color:"#64748b",lineHeight:1.7}}>{d}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA */}
+      <section style={S.cta}>
+        <h2 style={{fontSize:30,fontWeight:900,color:"#fff",marginBottom:10}}>내가 분양받은 건물, 지금 등록하세요</h2>
+        <p style={{fontSize:15,color:"rgba(255,255,255,.7)",marginBottom:28}}>첫 번째 프로젝트 '테라타워 영통'이 이미 시작했습니다.</p>
+        {joined?<div style={{fontSize:17,color:"#fff",fontWeight:700}}>✅ 사전등록 완료!</div>:(
+          <div style={{display:"flex",gap:8,maxWidth:400,margin:"0 auto"}}>
+            <input placeholder="이메일 주소" value={email} onChange={e=>setEmail(e.target.value)} style={S.ctaInput}/>
+            <button style={S.ctaBtn} onClick={()=>email&&setJoined(true)}>사전등록</button>
+          </div>
+        )}
+      </section>
+    </>
+  );
+}
+
+// ═══════════════════════════════════════
+// PROJECTS PAGE
+// ═══════════════════════════════════════
+function ProjectsPage({ searchQ, setSearchQ, activeCat, setActiveCat, filtered, goProject, scrollRef }) {
+  const hotProjects = PROJECTS_DATA.filter(p=>p.hot||p.members>30).slice(0,6);
+
+  const scrollL = () => { if(scrollRef.current) scrollRef.current.scrollBy({left:-340,behavior:"smooth"}); };
+  const scrollR = () => { if(scrollRef.current) scrollRef.current.scrollBy({left:340,behavior:"smooth"}); };
+
+  return (
+    <div style={{background:"#f8fafc",minHeight:"80vh"}}>
+      {/* Header */}
+      <div style={{background:"#0f172a",padding:"48px 24px 32px"}}>
+        <div style={{maxWidth:1240,margin:"0 auto"}}>
+          <h1 style={{fontSize:28,fontWeight:900,color:"#fff",marginBottom:8}}>프로젝트</h1>
+          <p style={{fontSize:15,color:"#94a3b8",marginBottom:24}}>분양받은 건물을 검색하거나, 새로운 프로젝트를 등록하세요.</p>
+          <div style={{display:"flex",gap:12}}>
+            <div style={{flex:1,position:"relative"}}>
+              <input value={searchQ} onChange={e=>setSearchQ(e.target.value)} placeholder="건물명, 지역명으로 검색" style={{width:"100%",padding:"14px 18px 14px 44px",borderRadius:12,border:"1px solid #334155",background:"#1e293b",color:"#e2e8f0",fontSize:15,fontFamily:"inherit",outline:"none"}}/>
+              <span style={{position:"absolute",left:16,top:"50%",transform:"translateY(-50%)",fontSize:18}}>🔍</span>
+            </div>
+            <button style={{...S.primBtn,padding:"14px 24px",fontSize:15}}>검색</button>
+          </div>
+        </div>
+      </div>
+
+      {/* Hot Projects - Horizontal Scroll */}
+      <div style={{maxWidth:1240,margin:"0 auto",padding:"32px 24px 0"}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+          <h2 style={{fontSize:20,fontWeight:800,color:"#0f172a"}}>🔥 지금 가장 뜨거운 프로젝트</h2>
+          <div style={{display:"flex",gap:8}}>
+            <button onClick={scrollL} style={S.scrollBtn}>←</button>
+            <button onClick={scrollR} style={S.scrollBtn}>→</button>
+          </div>
+        </div>
+        <div ref={scrollRef} className="scroll-hide" style={{display:"flex",gap:16,overflowX:"auto",paddingBottom:16,scrollSnapType:"x mandatory"}}>
+          {hotProjects.map(p=>(
+            <div key={p.id} className="hov" onClick={()=>goProject(p)} style={{minWidth:320,maxWidth:320,background:"#fff",border:"1px solid #e2e8f0",borderRadius:16,padding:24,cursor:"pointer",transition:".25s",scrollSnapAlign:"start",flexShrink:0}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:12}}>
+                <span style={{background:`${p.color}15`,color:p.color,padding:"3px 10px",borderRadius:8,fontSize:12,fontWeight:700}}>{p.cat}</span>
+                <div style={{display:"flex",alignItems:"center",gap:4}}>
+                  <span style={{width:6,height:6,borderRadius:"50%",background:"#ef4444",animation:"ping 1.5s infinite"}}/>
+                  <span style={{fontSize:11,color:"#ef4444",fontWeight:700}}>LIVE</span>
+                </div>
+              </div>
+              <h3 style={{fontSize:17,fontWeight:800,color:"#0f172a",marginBottom:4,lineHeight:1.4}}>{p.name}</h3>
+              <div style={{fontSize:13,color:"#64748b",marginBottom:16}}>📍 {p.loc}</div>
+              <div style={{display:"flex",gap:16,marginBottom:14}}>
+                <div><span style={{fontSize:20,fontWeight:800,color:p.color}}>{p.members}</span><span style={{fontSize:12,color:"#94a3b8",marginLeft:4}}>명</span></div>
+                <div><span style={{fontSize:20,fontWeight:800,color:"#0f172a"}}>{p.issues}</span><span style={{fontSize:12,color:"#94a3b8",marginLeft:4}}>안건</span></div>
+              </div>
+              <div style={{background:"#f1f5f9",borderRadius:8,height:6,overflow:"hidden"}}>
+                <div className="prog-bar" style={{height:"100%",width:`${p.participation}%`,background:p.color,borderRadius:8}}/>
+              </div>
+              <div style={{fontSize:11,color:"#94a3b8",marginTop:6}}>결집률 {p.participation}% (목표 {p.target}명)</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Categories + Full List */}
+      <div style={{maxWidth:1240,margin:"0 auto",padding:"32px 24px 60px"}}>
+        <div style={{display:"flex",gap:8,marginBottom:24,flexWrap:"wrap"}}>
+          {CATEGORIES.map(c=>(
+            <button key={c} onClick={()=>setActiveCat(c)} style={{background:activeCat===c?"#2563eb":"#fff",color:activeCat===c?"#fff":"#475569",border:"1px solid "+(activeCat===c?"#2563eb":"#e2e8f0"),padding:"8px 18px",borderRadius:20,fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>{c}</button>
+          ))}
+        </div>
+
+        {/* Board-style list */}
+        <div style={{background:"#fff",borderRadius:16,border:"1px solid #e2e8f0",overflow:"hidden"}}>
+          <div style={{display:"grid",gridTemplateColumns:"2fr 1fr 80px 80px 80px",padding:"12px 24px",background:"#f8fafc",fontSize:13,fontWeight:700,color:"#64748b",borderBottom:"1px solid #e2e8f0"}}>
+            <span>프로젝트명</span><span>위치</span><span style={{textAlign:"center"}}>참여자</span><span style={{textAlign:"center"}}>안건</span><span style={{textAlign:"center"}}>상태</span>
+          </div>
+          {filtered.map(p=>(
+            <div key={p.id} onClick={()=>goProject(p)} style={{display:"grid",gridTemplateColumns:"2fr 1fr 80px 80px 80px",padding:"16px 24px",borderBottom:"1px solid #f1f5f9",cursor:"pointer",alignItems:"center",transition:".15s"}} className="link">
+              <div>
+                <span style={{fontWeight:700,color:"#0f172a",fontSize:15}}>{p.name}</span>
+                <span style={{background:`${p.color}15`,color:p.color,padding:"2px 8px",borderRadius:6,fontSize:11,fontWeight:700,marginLeft:8}}>{p.cat}</span>
+              </div>
+              <span style={{fontSize:13,color:"#64748b"}}>{p.loc}</span>
+              <span style={{textAlign:"center",fontSize:14,fontWeight:700,color:"#2563eb"}}>{p.members}</span>
+              <span style={{textAlign:"center",fontSize:14,fontWeight:700,color:"#0f172a"}}>{p.issues}</span>
+              <span style={{textAlign:"center"}}><span style={{background:p.hot?"#fef2f2":"#f0fdf4",color:p.hot?"#dc2626":"#16a34a",padding:"3px 10px",borderRadius:8,fontSize:11,fontWeight:700}}>{p.hot?"활발":"대기"}</span></span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════
+// PROJECT DETAIL (act.ag style)
+// ═══════════════════════════════════════
+function ProjectDetailPage({ p, tab, setTab, goRights, setPage }) {
+  const tabs = ["종합","토론방","이슈","자료실"];
+  return (
+    <div style={{background:"#f8fafc",minHeight:"80vh"}}>
+      {/* Header */}
+      <div style={{background:"#fff",borderBottom:"1px solid #e2e8f0",padding:"32px 24px 0"}}>
+        <div style={{maxWidth:1240,margin:"0 auto"}}>
+          <button onClick={()=>setPage("projects")} style={{background:"none",border:"none",fontSize:13,color:"#64748b",cursor:"pointer",fontFamily:"inherit",marginBottom:16}}>← 프로젝트 목록</button>
+          <div style={{display:"flex",alignItems:"center",gap:16,marginBottom:8}}>
+            <div style={{width:48,height:48,borderRadius:14,background:p.color,display:"flex",alignItems:"center",justifyContent:"center",fontSize:24,color:"#fff",fontWeight:900}}>{p.name[0]}</div>
+            <div>
+              <div style={{display:"flex",alignItems:"center",gap:10}}>
+                <h1 style={{fontSize:24,fontWeight:900,color:"#0f172a"}}>{p.name}</h1>
+                <span style={{background:`${p.color}15`,color:p.color,padding:"3px 10px",borderRadius:8,fontSize:12,fontWeight:700}}>{p.cat}</span>
+              </div>
+              <div style={{fontSize:13,color:"#64748b"}}>📍 {p.loc}</div>
+            </div>
+          </div>
+          {/* Tabs */}
+          <div style={{display:"flex",gap:0,marginTop:20}}>
+            {tabs.map(t=>(
+              <button key={t} onClick={()=>setTab(t)} style={{padding:"12px 24px",fontSize:15,fontWeight:tab===t?800:500,color:tab===t?"#0f172a":"#94a3b8",background:"none",border:"none",borderBottom:tab===t?"3px solid #2563eb":"3px solid transparent",cursor:"pointer",fontFamily:"inherit"}}>{t}</button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Content */}
+      <div style={{maxWidth:1240,margin:"0 auto",padding:"32px 24px"}}>
+        {tab==="종합"&&(
+          <div style={{display:"grid",gridTemplateColumns:"280px 1fr 280px",gap:24}}>
+            {/* Left - Stats */}
+            <div>
+              <div style={S.card}>
+                <div style={{fontSize:13,color:"#64748b",marginBottom:12}}>참여 현황</div>
+                {[["참여자",`${p.members}명`,"#2563eb"],["진행 안건",`${p.issues}건`,"#0f172a"],["해결 완료",`${p.resolved}건`,"#10b981"]].map(([l,v,c],i)=>(
+                  <div key={i} style={{display:"flex",justifyContent:"space-between",padding:"8px 0",borderBottom:i<2?"1px solid #f1f5f9":"none"}}>
+                    <span style={{fontSize:13,color:"#64748b"}}>{l}</span>
+                    <span style={{fontSize:16,fontWeight:800,color:c}}>{v}</span>
+                  </div>
+                ))}
+              </div>
+              <div style={{...S.card,marginTop:16}}>
+                <div style={{fontSize:13,color:"#64748b",marginBottom:8}}>시행사</div>
+                <div style={{fontSize:14,fontWeight:700,color:"#0f172a",marginBottom:12}}>{p.dev}</div>
+                <div style={{fontSize:13,color:"#64748b",marginBottom:8}}>시공사</div>
+                <div style={{fontSize:14,fontWeight:700,color:"#0f172a",marginBottom:12}}>{p.builder}</div>
+                <div style={{fontSize:13,color:"#64748b",marginBottom:8}}>분양대행사</div>
+                <div style={{fontSize:14,fontWeight:700,color:"#0f172a"}}>{p.agent}</div>
+              </div>
+            </div>
+
+            {/* Center - Activity */}
+            <div>
+              {/* Gathering CTA */}
+              <div style={{...S.card,background:"linear-gradient(135deg,#eff6ff,#f5f3ff)",border:"1px solid #c7d2fe",marginBottom:20}}>
+                <div style={{fontSize:18,fontWeight:800,color:"#1e293b",marginBottom:4}}>결집률을 높여<br/>수분양자의 권리를 행사하세요</div>
+                <div style={{fontSize:28,fontWeight:900,color:"#2563eb",marginTop:12}}>{p.participation}%</div>
+                <div style={{background:"#e2e8f0",borderRadius:8,height:10,overflow:"hidden",marginTop:8,marginBottom:8}}>
+                  <div className="prog-bar" style={{height:"100%",width:`${p.participation}%`,background:"linear-gradient(90deg,#2563eb,#7c3aed)",borderRadius:8}}/>
+                </div>
+                <div style={{fontSize:13,color:"#64748b",marginBottom:16}}>목표 {p.target}명 중 {p.members}명 참여</div>
+                <button style={S.primBtn} onClick={()=>goRights(p)}>권리행사 센터 바로가기 →</button>
+              </div>
+
+              {/* Recent Issues */}
+              <div style={S.card}>
+                <div style={{display:"flex",justifyContent:"space-between",marginBottom:16}}>
+                  <span style={{fontSize:16,fontWeight:800,color:"#0f172a"}}>주요 이슈</span>
+                  <button onClick={()=>setTab("이슈")} style={{background:"none",border:"none",fontSize:13,color:"#2563eb",cursor:"pointer",fontFamily:"inherit",fontWeight:600}}>전체보기 →</button>
+                </div>
+                {(p.issuesList||[]).slice(0,3).map(issue=>(
+                  <div key={issue.id} style={{padding:"12px 0",borderBottom:"1px solid #f1f5f9"}}>
+                    <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
+                      <span style={{background:issue.status==="해결"?"#dcfce7":issue.status==="진행중"?"#fef3c7":"#e0e7ff",color:issue.status==="해결"?"#16a34a":issue.status==="진행중"?"#d97706":"#4f46e5",padding:"2px 8px",borderRadius:6,fontSize:11,fontWeight:700}}>{issue.status}</span>
+                      <span style={{fontSize:11,color:"#94a3b8"}}>{issue.tag}</span>
+                    </div>
+                    <div style={{fontSize:14,fontWeight:600,color:"#1e293b",marginBottom:4}}>{issue.title}</div>
+                    <div style={{display:"flex",gap:12,fontSize:12,color:"#94a3b8"}}>
+                      <span>👍 {issue.votes}</span><span>💬 {issue.comments}</span><span>{issue.date}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Right - Community */}
+            <div>
+              <div style={S.card}>
+                <div style={{fontSize:16,fontWeight:800,color:"#0f172a",marginBottom:16}}>최근 토론</div>
+                {(p.posts||[]).slice(0,4).map(post=>(
+                  <div key={post.id} style={{padding:"10px 0",borderBottom:"1px solid #f1f5f9",cursor:"pointer"}}>
+                    <div style={{fontSize:13,fontWeight:600,color:"#1e293b",lineHeight:1.5}}>{post.hot&&<span style={{color:"#ef4444",marginRight:4}}>🔥</span>}{post.title}</div>
+                    <div style={{fontSize:11,color:"#94a3b8",marginTop:4}}>{post.author} · 💬{post.comments} · {post.date}</div>
+                  </div>
+                ))}
+                <button onClick={()=>setTab("토론방")} style={{width:"100%",marginTop:12,background:"#f8fafc",border:"1px solid #e2e8f0",padding:"10px",borderRadius:8,fontSize:13,fontWeight:600,color:"#475569",cursor:"pointer",fontFamily:"inherit"}}>토론방 전체보기</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {tab==="토론방"&&(
+          <div style={{maxWidth:800}}>
+            <div style={{display:"flex",justifyContent:"space-between",marginBottom:20}}>
+              <h2 style={{fontSize:20,fontWeight:800}}>토론방</h2>
+              <button style={S.primBtn}>✏️ 글쓰기</button>
+            </div>
+            {(p.posts||[]).map(post=>(
+              <div key={post.id} style={{...S.card,marginBottom:12,cursor:"pointer"}} className="hov">
+                <div style={{display:"flex",justifyContent:"space-between"}}>
+                  <div><span style={{fontSize:15,fontWeight:700,color:"#0f172a"}}>{post.hot&&"🔥 "}{post.title}</span></div>
+                  <span style={{fontSize:12,color:"#94a3b8"}}>{post.date}</span>
+                </div>
+                <div style={{fontSize:13,color:"#64748b",marginTop:6}}>{post.author} · 댓글 {post.comments}개</div>
+              </div>
+            ))}
+            {(!p.posts||p.posts.length===0)&&<div style={{...S.card,textAlign:"center",padding:48,color:"#94a3b8"}}>아직 등록된 글이 없습니다.</div>}
+          </div>
+        )}
+
+        {tab==="이슈"&&(
+          <div style={{maxWidth:900}}>
+            <div style={{display:"flex",justifyContent:"space-between",marginBottom:20}}>
+              <h2 style={{fontSize:20,fontWeight:800}}>이슈 · 안건</h2>
+              <button style={S.primBtn}>+ 이슈 등록</button>
+            </div>
+            {(p.issuesList||[]).map(issue=>(
+              <div key={issue.id} style={{...S.card,marginBottom:12}} className="hov">
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
+                  <div style={{flex:1}}>
+                    <div style={{display:"flex",gap:8,marginBottom:6}}>
+                      <span style={{background:issue.status==="해결"?"#dcfce7":issue.status==="진행중"?"#fef3c7":"#e0e7ff",color:issue.status==="해결"?"#16a34a":issue.status==="진행중"?"#d97706":"#4f46e5",padding:"3px 10px",borderRadius:8,fontSize:12,fontWeight:700}}>{issue.status}</span>
+                      <span style={{background:"#f1f5f9",color:"#475569",padding:"3px 10px",borderRadius:8,fontSize:12,fontWeight:600}}>{issue.tag}</span>
+                    </div>
+                    <div style={{fontSize:16,fontWeight:700,color:"#0f172a",marginBottom:8}}>{issue.title}</div>
+                    <div style={{display:"flex",gap:16,fontSize:13,color:"#94a3b8"}}>
+                      <span>👍 동의 {issue.votes}명</span><span>💬 댓글 {issue.comments}개</span><span>📅 {issue.date}</span>
+                    </div>
+                  </div>
+                  {issue.status!=="해결"&&<button style={{...S.primBtn,fontSize:13,padding:"8px 16px"}} onClick={()=>goRights(p)}>권리행사 →</button>}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {tab==="자료실"&&(
+          <div style={{maxWidth:800}}>
+            <h2 style={{fontSize:20,fontWeight:800,marginBottom:20}}>자료실</h2>
+            {[["📄","분양 모집공고문 원본","PDF · 2025.02.15"],["📋","표준 분양계약서 사본","PDF · 2025.02.20"],["📊","관리비 산정 기준표","XLSX · 2025.04.01"],["📰","관련 언론보도 모음","링크 · 수시 업데이트"],["⚖️","관련 판례 정리","PDF · 2025.05.10"]].map(([icon,t,meta],i)=>(
+              <div key={i} style={{...S.card,marginBottom:8,display:"flex",alignItems:"center",gap:16,cursor:"pointer"}} className="hov">
+                <span style={{fontSize:28}}>{icon}</span>
+                <div style={{flex:1}}><div style={{fontSize:14,fontWeight:700,color:"#0f172a"}}>{t}</div><div style={{fontSize:12,color:"#94a3b8"}}>{meta}</div></div>
+                <span style={{fontSize:13,color:"#2563eb",fontWeight:600}}>다운로드</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════
+// RIGHTS PAGE
+// ═══════════════════════════════════════
+function RightsPage({ project, setPage, goProject }) {
+  const p = project || PROJECTS_DATA[0];
+  return (
+    <div style={{background:"#f8fafc",minHeight:"80vh"}}>
+      <div style={{background:"linear-gradient(135deg,#0f172a,#1e3a5f)",padding:"48px 24px 40px"}}>
+        <div style={{maxWidth:1240,margin:"0 auto"}}>
+          <button onClick={()=>setPage("projects")} style={{background:"none",border:"none",fontSize:13,color:"#64748b",cursor:"pointer",fontFamily:"inherit",marginBottom:16}}>← 돌아가기</button>
+          <h1 style={{fontSize:28,fontWeight:900,color:"#fff",marginBottom:8}}>⚖️ 권리행사 센터</h1>
+          <p style={{fontSize:15,color:"#94a3b8"}}>프로젝트별 법적 절차와 공동 행동을 관리하는 공간입니다.</p>
+          {project&&<div style={{marginTop:16,background:"rgba(255,255,255,.06)",border:"1px solid rgba(255,255,255,.1)",borderRadius:12,padding:"12px 20px",display:"inline-block"}}>
+            <span style={{fontSize:14,color:"#93c5fd",fontWeight:700}}>{p.name}</span>
+          </div>}
+        </div>
+      </div>
+
+      <div style={{maxWidth:1240,margin:"0 auto",padding:"32px 24px"}}>
+        {/* Steps */}
+        <SectionHead tag="진행 절차" title="권리행사 4단계" />
+        <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:16,marginBottom:48}}>
+          {RIGHTS_STEPS.map((s,i)=>(
+            <div key={i} style={{background:"#fff",border:"1px solid #e2e8f0",borderRadius:16,padding:24,position:"relative"}}>
+              <div style={{fontSize:32,fontWeight:900,color:"#dbeafe",fontFamily:"'DM Sans',sans-serif"}}>{s.step}</div>
+              <h3 style={{fontSize:16,fontWeight:800,color:"#0f172a",marginTop:8,marginBottom:6}}>{s.title}</h3>
+              <p style={{fontSize:13,color:"#64748b",lineHeight:1.6,marginBottom:10}}>{s.desc}</p>
+              <div style={{fontSize:11,background:"#eff6ff",color:"#2563eb",padding:"4px 10px",borderRadius:8,display:"inline-block",fontWeight:700}}>{s.threshold}</div>
+              {i<3&&<div style={{position:"absolute",right:-12,top:"40%",fontSize:18,color:"#cbd5e1",fontWeight:700}}>→</div>}
+            </div>
+          ))}
+        </div>
+
+        {/* Active cases */}
+        {project&&(p.issuesList||[]).length>0&&(
+          <>
+            <SectionHead tag="진행 현황" title={`${p.name} 안건 현황`} />
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:48}}>
+              {p.issuesList.filter(i=>i.status!=="해결").map(issue=>(
+                <div key={issue.id} style={{...S.card,border:issue.votes>=30?"2px solid #2563eb":"1px solid #e2e8f0"}}>
+                  <div style={{display:"flex",gap:8,marginBottom:8}}>
+                    <span style={{background:issue.status==="진행중"?"#fef3c7":"#e0e7ff",color:issue.status==="진행중"?"#d97706":"#4f46e5",padding:"3px 10px",borderRadius:8,fontSize:12,fontWeight:700}}>{issue.status}</span>
+                    <span style={{background:"#f1f5f9",color:"#475569",padding:"3px 10px",borderRadius:8,fontSize:12,fontWeight:600}}>{issue.tag}</span>
+                  </div>
+                  <h3 style={{fontSize:15,fontWeight:700,color:"#0f172a",marginBottom:10}}>{issue.title}</h3>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                    <div style={{flex:1}}>
+                      <div style={{fontSize:12,color:"#64748b",marginBottom:4}}>동의율 {Math.round(issue.votes/p.members*100)}% ({issue.votes}/{p.members}명)</div>
+                      <div style={{background:"#e2e8f0",borderRadius:6,height:8,overflow:"hidden"}}>
+                        <div className="prog-bar" style={{height:"100%",width:`${issue.votes/p.members*100}%`,background:issue.votes/p.members>=.3?"#2563eb":"#94a3b8",borderRadius:6}}/>
+                      </div>
+                    </div>
+                    <button style={{marginLeft:16,...(issue.votes/p.members>=.3?S.primBtn:{...S.secBtnSm,color:"#94a3b8",cursor:"not-allowed"}),fontSize:12,padding:"8px 14px"}}>
+                      {issue.votes/p.members>=.3?"법률검토 요청":"30% 미달"}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+
+        {/* Laws */}
+        <SectionHead tag="관련 법령" title="알아두면 힘이 되는 법률" />
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16}}>
+          {LAWS.map((law,i)=>(
+            <div key={i} style={S.card}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8}}>
+                <span style={{background:"#eff6ff",color:"#2563eb",padding:"3px 10px",borderRadius:8,fontSize:12,fontWeight:700}}>{law.short}</span>
+                <span style={{fontSize:11,color:"#94a3b8"}}>{law.relevant}</span>
+              </div>
+              <h3 style={{fontSize:14,fontWeight:700,color:"#0f172a",marginBottom:6,lineHeight:1.4}}>{law.title}</h3>
+              <p style={{fontSize:13,color:"#64748b",lineHeight:1.6}}>{law.desc}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════
+// COMMUNITY PAGE (placeholder)
+// ═══════════════════════════════════════
+function CommunityPage({ setPage }) {
+  return (
+    <div style={{background:"#f8fafc",minHeight:"80vh",padding:"48px 24px"}}>
+      <div style={{maxWidth:1240,margin:"0 auto"}}>
+        <h1 style={{fontSize:28,fontWeight:900,color:"#0f172a",marginBottom:8}}>커뮤니티</h1>
+        <p style={{fontSize:15,color:"#64748b",marginBottom:32}}>전체 프로젝트 통합 커뮤니티입니다. 자유롭게 정보를 나누세요.</p>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 300px",gap:24}}>
+          <div>
+            {[["자유게시판","분양·입주 관련 자유로운 이야기","342"],["법률·세무 Q&A","전문가에게 질문하세요","89"],["분양 후기","실제 경험을 공유합니다","156"],["공동구매·제휴","함께하면 저렴하게","47"]].map(([t,d,cnt],i)=>(
+              <div key={i} style={{...S.card,marginBottom:12,display:"flex",justifyContent:"space-between",alignItems:"center",cursor:"pointer"}} className="hov">
+                <div><div style={{fontSize:16,fontWeight:700,color:"#0f172a"}}>{t}</div><div style={{fontSize:13,color:"#64748b",marginTop:2}}>{d}</div></div>
+                <div style={{textAlign:"right"}}><div style={{fontSize:20,fontWeight:800,color:"#2563eb"}}>{cnt}</div><div style={{fontSize:11,color:"#94a3b8"}}>게시글</div></div>
+              </div>
+            ))}
+          </div>
+          <div>
+            <div style={S.card}>
+              <div style={{fontSize:16,fontWeight:800,color:"#0f172a",marginBottom:16}}>🔥 실시간 인기글</div>
+              {["입주제한 업종 리스트 총정리","관리비 절약 꿀팁 모음","분양계약서 꼭 확인할 5가지","전매 vs 직접입주 비교분석"].map((t,i)=>(
+                <div key={i} style={{padding:"8px 0",borderBottom:"1px solid #f1f5f9",fontSize:13,color:"#475569",cursor:"pointer"}}>{i+1}. {t}</div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── SHARED COMPONENTS ───
+function SectionHead({ tag, title, desc }) {
+  return (
+    <div style={{textAlign:"center",marginBottom:36}}>
+      <span style={{display:"inline-block",background:"#eff6ff",color:"#2563eb",padding:"4px 14px",borderRadius:14,fontSize:13,fontWeight:700,marginBottom:10}}>{tag}</span>
+      <h2 style={{fontSize:28,fontWeight:900,color:"#0f172a",letterSpacing:-.5}}>{title}</h2>
+      {desc&&<p style={{fontSize:15,color:"#64748b",marginTop:6}}>{desc}</p>}
+    </div>
+  );
+}
+
+// ─── STYLES ───
+const S = {
+  root:{fontFamily:"'Noto Sans KR','DM Sans',sans-serif",color:"#1e293b",background:"#fff",minHeight:"100vh"},
+  nav:{position:"sticky",top:0,zIndex:100,background:"rgba(255,255,255,.95)",backdropFilter:"blur(16px)",borderBottom:"1px solid #e2e8f0"},
+  navInner:{maxWidth:1240,margin:"0 auto",padding:"0 24px",height:60,display:"flex",alignItems:"center",justifyContent:"space-between"},
+  logoWrap:{display:"flex",alignItems:"center",gap:10,cursor:"pointer"},
+  logoMark:{width:34,height:34,borderRadius:10,background:"linear-gradient(135deg,#2563eb,#7c3aed)",color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:900,fontSize:16,fontFamily:"'DM Sans',sans-serif"},
+  logoName:{fontWeight:900,fontSize:17,color:"#0f172a",letterSpacing:-.5},
+  logoTag:{fontSize:9,color:"#64748b",fontWeight:600,letterSpacing:1.5,textTransform:"uppercase"},
+  navLinks:{display:"flex",gap:2},
+  navBtn:{background:"none",border:"none",padding:"7px 14px",fontSize:14,color:"#475569",cursor:"pointer",borderRadius:8,fontWeight:500,fontFamily:"inherit",transition:".15s"},
+  navRight:{display:"flex",gap:8,alignItems:"center"},
+  primBtn:{background:"#2563eb",color:"#fff",border:"none",padding:"9px 18px",borderRadius:10,fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit"},
+  secBtnSm:{background:"none",color:"#475569",border:"1px solid #e2e8f0",padding:"9px 18px",borderRadius:10,fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"inherit"},
+  hero:{position:"relative",background:"#0f172a",overflow:"hidden",padding:"72px 24px 56px"},
+  heroBg:{position:"absolute",inset:0,background:"radial-gradient(ellipse at 20% 30%,rgba(37,99,235,.12) 0%,transparent 60%),radial-gradient(ellipse at 80% 70%,rgba(124,58,237,.08) 0%,transparent 50%)"},
+  heroInner:{position:"relative",maxWidth:1240,margin:"0 auto"},
+  heroPill:{display:"inline-block",background:"rgba(255,255,255,.06)",border:"1px solid rgba(255,255,255,.1)",color:"#94a3b8",padding:"8px 18px",borderRadius:24,fontSize:13,fontWeight:500,marginBottom:24},
+  heroH1:{fontSize:42,fontWeight:900,color:"#fff",lineHeight:1.2,letterSpacing:-1.5,marginBottom:18},
+  heroGrad:{background:"linear-gradient(90deg,#60a5fa,#a78bfa,#f472b6)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"},
+  heroP:{fontSize:15,color:"#94a3b8",lineHeight:1.9,marginBottom:28},
+  heroPrimBtn:{background:"#2563eb",color:"#fff",border:"none",padding:"13px 28px",borderRadius:12,fontSize:15,fontWeight:700,cursor:"pointer",fontFamily:"inherit"},
+  heroSecBtn:{background:"transparent",color:"#93c5fd",border:"1px solid rgba(147,197,253,.25)",padding:"13px 24px",borderRadius:12,fontSize:15,fontWeight:500,cursor:"pointer",fontFamily:"inherit"},
+  previewCard:{background:"rgba(255,255,255,.05)",border:"1px solid rgba(255,255,255,.1)",borderRadius:20,padding:28,backdropFilter:"blur(12px)"},
+  prevBadge:{display:"inline-block",background:"rgba(239,68,68,.15)",color:"#fca5a5",fontSize:12,fontWeight:700,padding:"4px 12px",borderRadius:12,marginBottom:16},
+  statsBar:{maxWidth:1240,margin:"0 auto",padding:"36px 24px",display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:24,borderBottom:"1px solid #e2e8f0"},
+  sec:{padding:"64px 24px"},
+  secInner:{maxWidth:1240,margin:"0 auto"},
+  cta:{background:"linear-gradient(135deg,#2563eb,#7c3aed)",padding:"64px 24px",textAlign:"center"},
+  ctaInput:{flex:1,padding:"13px 18px",borderRadius:12,border:"none",fontSize:15,fontFamily:"inherit",outline:"none"},
+  ctaBtn:{background:"#0f172a",color:"#fff",border:"none",padding:"13px 24px",borderRadius:12,fontSize:15,fontWeight:700,cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap"},
+  card:{background:"#fff",border:"1px solid #e2e8f0",borderRadius:14,padding:20},
+  scrollBtn:{width:36,height:36,borderRadius:10,background:"#fff",border:"1px solid #e2e8f0",fontSize:16,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"inherit"},
+  footer:{background:"#0f172a",padding:"32px 24px"},
+  footerInner:{maxWidth:1240,margin:"0 auto",display:"flex",justifyContent:"space-between",alignItems:"flex-end"},
+};
+
+ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(window.App));
+</script>
+</body>
+</html>
